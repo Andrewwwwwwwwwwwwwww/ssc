@@ -11,6 +11,7 @@
     "main": ["io.github.andrewwwwwwwwwwwwwww.ssc.ServerSidedCorpse"]
   },
   "mixins": ["ssc.mixins.json"],
+  "icon": "assets/ssc/icon.png",
   "contact": {
     "homepage": "https://github.com/Andrewwwwwwwwwwwwwww/ssc",
     "sources": "https://github.com/Andrewwwwwwwwwwwwwww/ssc",
