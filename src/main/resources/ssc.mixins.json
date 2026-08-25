@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "io.github.andrewwwwwwwwwwwwwww.ssc.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "AvatarDataAccessor",
+    "EntityPoseAccessor",
+    "InteractionInvoker",
+    "PlayerDropMixin",
+    "PlayerInfoPacketAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

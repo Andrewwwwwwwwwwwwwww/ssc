@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "ssc",
+  "version": "${version}",
+  "name": "Server Sided Corpse",
+  "description": "Fully server-side lootable corpses: when you die, your body stays where you fell — wearing your skin — holding your items and XP until you come back for it. Works with completely vanilla clients; nothing to install client-side. The corpse settles on the ground and floats on lava or water, right-click opens it as a chest, sneak-right-click takes everything back to its original slots. Owner-locked until it ages into public, and a forgotten body eventually drops its contents so nothing is ever truly lost.",
+  "authors": ["Andrewwwwwwwwwwwwwww"],
+  "license": "All-Rights-Reserved",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["io.github.andrewwwwwwwwwwwwwww.ssc.ServerSidedCorpse"]
+  },
+  "mixins": ["ssc.mixins.json"],
+  "contact": {
+    "homepage": "https://github.com/Andrewwwwwwwwwwwwwww/ssc",
+    "sources": "https://github.com/Andrewwwwwwwwwwwwwww/ssc",
+    "issues": "https://github.com/Andrewwwwwwwwwwwwwww/ssc/issues"
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": ">=0.152.1"
+  },
+  "breaks": {
+    "fallen": "*"
+  }
+}
