@@ -100,10 +100,15 @@ public final class CorpseManager {
             CorpseIndex.get(server).remove(corpse.anchorId);
             anchor.discard();
             anchor2.discard();
-            ServerSidedCorpse.LOGGER.warn("[SSC] could not spawn corpse anchor for {}", profile.name());
+            ServerSidedCorpse.LOGGER.warn(
+                    "[SSC] could not place a body for {} at {} {} {} in {} — the world refused the "
+                            + "hitbox entity, so their items dropped on the ground instead. A claim or "
+                            + "protection mod blocking entity spawning there is the usual cause.",
+                    profile.name(), (int) rest.x(), (int) rest.y(), (int) rest.z(),
+                    level.dimension().identifier());
             return false;
         }
-        ServerSidedCorpse.LOGGER.info("[SSC] corpse of {} at {} {} {} in {}",
+        ServerSidedCorpse.debug("body of {} placed at {} {} {} in {}",
                 profile.name(), (int) rest.x(), (int) rest.y(), (int) rest.z(), corpse.dimension);
         DeathHistoryData.get(server).record(
                 player.getUUID(),
@@ -248,6 +253,7 @@ public final class CorpseManager {
     public static void tick(MinecraftServer server) {
         CorpseIndex index = CorpseIndex.get(server);
         boolean dirty = false;
+        boolean resync = (++resyncCounter % RESYNC_INTERVAL) == 0;
         for (Corpse corpse : index.all()) {
             ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, corpse.dimension));
             if (level == null) {
@@ -261,6 +267,9 @@ public final class CorpseManager {
             corpse.age++;
             dirty = true;
             applyGravity(level, corpse, anchor, anchor2);
+            if (resync) {
+                resyncVisuals(level, corpse, anchor);
+            }
             long despawn = CorpseConfig.get().despawnTicks();
             if (despawn > 0 && corpse.age >= despawn) {
                 dropEverything(level, corpse, anchor);
@@ -341,5 +350,66 @@ public final class CorpseManager {
         CorpseVisuals.removeEverywhere(level, corpse);
         CorpseIndex.get(server).remove(corpse.anchorId);
         DeathHistoryData.get(server).markCorpseGone(corpse.ownerId, corpse.anchorId);
+    }
+
+    // --- visual resync (self-healing) ---------------------------------------
+
+    /** How often the body-visibility check runs, in ticks. */
+    private static final int RESYNC_INTERVAL = 40;
+    private static int resyncCounter;
+
+    /**
+     * Re-assert who can see each body. The body is packet-only, so a client
+     * that rebuilds its world — respawning, changing dimension, reconnecting —
+     * drops it silently and would never hear about it again, because
+     * start-tracking only fires on the way in. This notices the gap within two
+     * seconds and re-sends, which is what stops a body being permanently
+     * invisible to one unlucky player.
+     *
+     * <p>Spawning and despawning use different radii so this never fights the
+     * tracking events: it only adds well inside the tracking range and only
+     * removes clearly outside it.
+     */
+    private static void resyncVisuals(ServerLevel level, Corpse corpse, Entity anchor) {
+        int chunks = Math.min(EntityTypes.INTERACTION.clientTrackingRange(),
+                level.getServer().getPlayerList().getViewDistance());
+        double spawnR = Math.max(16.0, (chunks - 1) * 16.0);
+        double despawnR = (chunks + 1) * 16.0;
+        double spawnSq = spawnR * spawnR;
+        double despawnSq = despawnR * despawnR;
+
+        java.util.Set<java.util.UUID> here = new java.util.HashSet<>();
+        for (ServerPlayer player : level.players()) {
+            here.add(player.getUUID());
+            double d = player.distanceToSqr(anchor.getX(), anchor.getY(), anchor.getZ());
+            boolean shown = corpse.shownTo.contains(player.getUUID());
+            if (!shown && d < spawnSq) {
+                CorpseVisuals.spawnFor(player, corpse);
+                ServerSidedCorpse.debug("resync: re-sent {}'s body to {} ({} blocks away)",
+                        corpse.displayOwner(), player.getGameProfile().name(), (int) Math.sqrt(d));
+            } else if (shown && d > despawnSq) {
+                CorpseVisuals.despawnFor(player, corpse);
+            }
+        }
+        // Anyone no longer in this level (disconnected, or gone to another
+        // dimension) rebuilt their world and dropped the body with it.
+        corpse.shownTo.retainAll(here);
+    }
+
+    /**
+     * Forget that a player has been shown any body, so the next resync re-sends
+     * them all. Used when a client rebuilds its world in place — respawning is
+     * the case the tracking events don't cover, since the player never leaves
+     * range for the events to fire.
+     */
+    public static void forgetPlayer(MinecraftServer server, java.util.UUID playerId) {
+        for (Corpse corpse : CorpseIndex.get(server).all()) {
+            corpse.shownTo.remove(playerId);
+        }
+    }
+
+    /** Every body the server is holding, for the diagnostic command. */
+    public static java.util.List<Corpse> all(MinecraftServer server) {
+        return CorpseIndex.get(server).all();
     }
 }

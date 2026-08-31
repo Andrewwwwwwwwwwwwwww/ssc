@@ -1,6 +1,7 @@
 package io.github.andrewwwwwwwwwwwwwww.ssc.mixin;
 
 import io.github.andrewwwwwwwwwwwwwww.ssc.CorpseConfig;
+import io.github.andrewwwwwwwwwwwwwww.ssc.ServerSidedCorpse;
 import io.github.andrewwwwwwwwwwwwwww.ssc.corpse.Corpse;
 import io.github.andrewwwwwwwwwwwwwww.ssc.corpse.CorpseManager;
 import io.github.andrewwwwwwwwwwwwwww.ssc.corpse.CorpsePlacement;
@@ -21,6 +22,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * loose item entities, sweep them (and their experience) into a corpse at the
  * death location. Runs at HEAD of {@code Player.dropEquipment} and cancels the
  * vanilla scatter entirely.
+ *
+ * <p>Every path that declines to make a body logs its reason under
+ * {@code debugLogging}. A missing corpse is otherwise indistinguishable from a
+ * vanilla death, so without this a server owner has nothing to go on.
  */
 @Mixin(Player.class)
 public abstract class PlayerDropMixin {
@@ -30,11 +35,18 @@ public abstract class PlayerDropMixin {
     @Inject(method = "dropEquipment", at = @At("HEAD"), cancellable = true)
     private void ssc$captureCorpse(ServerLevel level, CallbackInfo ci) {
         Player self = (Player) (Object) this;
-        if (!CorpseConfig.get().enabled || self.isSpectator()) {
+        String who = self.getGameProfile().name();
+        if (!CorpseConfig.get().enabled) {
+            ServerSidedCorpse.debug("no body for {}: the mod is disabled in the config", who);
+            return;
+        }
+        if (self.isSpectator()) {
+            ServerSidedCorpse.debug("no body for {}: they died in spectator mode", who);
             return;
         }
         // keepInventory keeps everything already — nothing to bury.
         if (level.getGameRules().get(GameRules.KEEP_INVENTORY)) {
+            ServerSidedCorpse.debug("no body for {}: keepInventory is on", who);
             return;
         }
 
@@ -61,18 +73,23 @@ public abstract class PlayerDropMixin {
         // bail and let everything drop normally instead of stranding items.
         CorpseConfig cfg = CorpseConfig.get();
         if (!cfg.spawnInLava && self.isInLava()) {
+            ServerSidedCorpse.debug("no body for {}: died in lava and spawnInLava is off", who);
             return;
         }
         if (!cfg.spawnOverVoid && CorpsePlacement.isOverVoid(level, self.blockPosition(), cfg.voidScanDepth)) {
+            ServerSidedCorpse.debug("no body for {}: died over the void and spawnOverVoid is off", who);
             return;
         }
 
         if (!anyItems && experience <= 0) {
-            return; // truly nothing to bury — let vanilla proceed (it drops nothing)
+            // truly nothing to bury — let vanilla proceed (it drops nothing)
+            ServerSidedCorpse.debug("no body for {}: empty inventory and no xp to store", who);
+            return;
         }
 
         if (!CorpseManager.createFromDeath(level, self, byIndex, experience)) {
-            return; // could not place a corpse — vanilla drops rather than deleting items
+            // could not place a corpse — vanilla drops rather than deleting items
+            return; // createFromDeath logs the reason at WARN
         }
 
         inventory.clearContent();

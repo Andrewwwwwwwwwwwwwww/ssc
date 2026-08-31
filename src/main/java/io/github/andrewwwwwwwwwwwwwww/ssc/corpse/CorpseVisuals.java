@@ -100,6 +100,8 @@ public final class CorpseVisuals {
         viewer.connection.send(new ClientboundSetEntityDataPacket(corpse.fakeId, List.of(
                 SynchedEntityData.DataValue.create(EntityPoseAccessor.ssc$dataPose(), Pose.SLEEPING),
                 SynchedEntityData.DataValue.create(AvatarDataAccessor.ssc$skinCustomisation(), ALL_SKIN_LAYERS))));
+
+        corpse.shownTo.add(viewer.getUUID());
     }
 
     /** Re-position the fake body for everyone in the level (used while the body falls). */
@@ -115,6 +117,7 @@ public final class CorpseVisuals {
 
     /** Remove this corpse's body from one viewer (stop-tracking or corpse removal). */
     public static void despawnFor(ServerPlayer viewer, Corpse corpse) {
+        corpse.shownTo.remove(viewer.getUUID());
         viewer.connection.send(new ClientboundRemoveEntitiesPacket(corpse.fakeId));
         viewer.connection.send(new ClientboundPlayerInfoRemovePacket(List.of(corpse.fakeUuid)));
     }

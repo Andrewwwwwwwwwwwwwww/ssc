@@ -63,6 +63,14 @@ public final class Corpse {
     public final int fakeId = FAKE_IDS.decrementAndGet();
     public final UUID fakeUuid = UUID.randomUUID();
 
+    /**
+     * Players whose client currently has this body drawn. Runtime only: a
+     * client that reloads its world (respawn, dimension change, reconnect)
+     * silently drops the packet-only body, so this is what lets the resync
+     * tick notice and re-send it.
+     */
+    public final java.util.Set<UUID> shownTo = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
     public Corpse(UUID anchorId, java.util.Optional<UUID> anchorId2,
                   UUID ownerId, String ownerName, String skinValue, String skinSignature,
                   Identifier dimension, double x, double y, double z, float yaw, boolean pinned,
