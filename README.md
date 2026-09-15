@@ -1,6 +1,6 @@
 # Server Sided Corpse (SSC)
 
-A **fully server-side** Fabric mod for Minecraft 26.2. When you die, your body stays where you fell — a corpse wearing your skin, holding everything you were carrying plus your XP — and **players connect with completely vanilla clients**. Nothing to install client-side.
+A **fully server-side** Fabric mod for Minecraft 26.3. When you die, your body stays where you fell — a corpse wearing your skin, holding everything you were carrying plus your XP — and **players connect with completely vanilla clients**. Nothing to install client-side.
 
 A server-side rewrite of [Fallen](https://github.com/Andrewwwwwwwwwwwwwww/fallen). All the original rules apply:
 

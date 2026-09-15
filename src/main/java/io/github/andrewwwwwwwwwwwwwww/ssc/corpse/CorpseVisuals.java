@@ -19,7 +19,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Pose;
-import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.entity.PositionPath;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
@@ -107,8 +107,8 @@ public final class CorpseVisuals {
     /** Re-position the fake body for everyone in the level (used while the body falls). */
     public static void syncPosition(ServerLevel level, Corpse corpse) {
         var packet = new ClientboundEntityPositionSyncPacket(corpse.fakeId,
-                new PositionMoveRotation(new Vec3(corpse.x, corpse.y, corpse.z), Vec3.ZERO,
-                        90.0f - corpse.yaw, 0.0f),
+                PositionPath.of(new Vec3(corpse.x, corpse.y, corpse.z)),
+                90.0f - corpse.yaw, 0.0f,
                 false);
         for (ServerPlayer player : level.players()) {
             player.connection.send(packet); // unknown-id packets are ignored by non-tracking clients
