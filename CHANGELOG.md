@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.0 (2026-09-15)
+
+Minecraft 26.3 build.
+
+- **Minecraft 26.3 build.** Fabric Loader 0.19.3 -> 0.19.5, Fabric API 0.152.1+26.2 -> 0.160.5+26.3. The 26.2 build carries on alongside it.
+- Corpse position sync uses the 26.3 entity position packet; no functional change intended.
+
 ## v1.1.0 (2026-08-31)
 
 Diagnostics and self-healing for missing bodies, plus claim-mod compatibility.
